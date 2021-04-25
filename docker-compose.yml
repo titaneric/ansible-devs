@@ -1,0 +1,9 @@
+---
+version: "2.1"
+services:
+  openssh-server:
+    image: rastasheep/ubuntu-sshd:18.04
+    container_name: ubuntu-sshd
+    ports:
+      - "2222:22"
+    restart: unless-stopped

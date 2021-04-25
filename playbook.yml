@@ -1,0 +1,51 @@
+- hosts: all
+  environment:
+    PATH: "{{ ansible_env.PATH }}:{{ ansible_env.HOME }}/.tools/homebrew/bin"
+  tasks:
+  - name: "Create directory for packags"
+    file:
+      path: "{{ ansible_env.HOME }}/.tools/homebrew"
+      recurse: yes
+      state: directory
+
+  - name: "Update apt"
+    become: true
+    apt:
+      update_cache: yes
+    register: apt
+
+  - name: "Install distribution packages"
+    become: true
+    apt:
+      pkg:
+      - git
+      - curl
+      - wget
+      - vim
+      - tmux
+      - zsh
+      - build-essential
+      - procps
+      - file
+
+  - name: "Install Homebrew"
+    shell: curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C homebrew
+    args:
+      chdir: "{{ ansible_env.HOME }}/.tools"
+
+    # unarchive:
+    #   src: https://github.com/Homebrew/brew/tarball/master
+    #   dest: /home/{{ ansible_env.USER }}/.tools
+    #   remote_src: yes
+    
+  - name: "Install brew packages"
+    homebrew:
+      path: "{{ ansible_env.HOME }}/.tools/homebrew/bin"
+      name:
+        - fzf
+        - ripgrep
+        - exa
+        - fd
+        - bat
+        - git-delta
+      state: present
