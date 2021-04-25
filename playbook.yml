@@ -2,78 +2,93 @@
   environment:
     PATH: "{{ ansible_env.PATH }}:{{ ansible_env.HOME }}/.tools/homebrew/bin"
   tasks:
-  - name: "Create directory for packags"
-    file:
-      path: "{{ ansible_env.HOME }}/.tools/homebrew"
-      recurse: yes
-      state: directory
+    - name: "Create directory for packags"
+      file:
+        path: "{{ ansible_env.HOME }}/.tools/homebrew"
+        recurse: yes
+        state: directory
 
-  - name: "Update apt"
-    become: true
-    apt:
-      update_cache: yes
-    register: apt
+    - name: "Update apt"
+      become: true
+      apt:
+        update_cache: yes
+      register: apt
 
-  - name: "Install distribution packages"
-    become: true
-    apt:
-      pkg:
-      - git
-      - curl
-      - wget
-      - vim
-      - tmux
-      - zsh
-      - build-essential
-      - procps
-      - file
+    - name: "Install distribution packages"
+      become: true
+      apt:
+        pkg:
+          - git
+          - curl
+          - wget
+          - vim
+          - tmux
+          - zsh
+          - build-essential
+          - procps
+          - file
 
-  - name: "Install Homebrew"
-    shell: curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C homebrew
-    args:
-      chdir: "{{ ansible_env.HOME }}/.tools"
+    - name: "Install Homebrew"
+      shell: curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C homebrew
+      args:
+        chdir: "{{ ansible_env.HOME }}/.tools"
 
-    # unarchive:
-    #   src: https://github.com/Homebrew/brew/tarball/master
-    #   dest: /home/{{ ansible_env.USER }}/.tools
-    #   remote_src: yes
-    
-  - name: "Install brew packages"
-    homebrew:
-      path: "{{ ansible_env.HOME }}/.tools/homebrew/bin"
-      name:
-        - fzf
-        - ripgrep
-        - exa
-        - fd
-        - bat
-        - git-delta
-        - starship
-      state: present
-  
-  - name: "Set default shell to zsh"
-    become: true
-    shell: chsh -s $(which zsh)
+      # unarchive:
+      #   src: https://github.com/Homebrew/brew/tarball/master
+      #   dest: /home/{{ ansible_env.USER }}/.tools
+      #   remote_src: yes
+    - name: "Install brew packages"
+      homebrew:
+        path: "{{ ansible_env.HOME }}/.tools/homebrew/bin"
+        name:
+          - fzf
+          - ripgrep
+          - exa
+          - fd
+          - bat
+          - git-delta
+          - starship
+        state: present
 
-  # - name: "Install oh-my-zsh"
-  #   shell: yes | sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    - name: "Set default shell to zsh"
+      become: true
+      shell: chsh -s $(which zsh)
 
-  - name: "Install zsh-autosuggestions"
-    git:
-      repo: https://github.com/zsh-users/zsh-autosuggestions
-      dest: "{{ ansible_env.HOME }}/.zsh/zsh-autosuggestions" 
+    - name: "Install zsh-autosuggestions"
+      git:
+        repo: https://github.com/zsh-users/zsh-autosuggestions
+        dest: "{{ ansible_env.HOME }}/.zsh/zsh-autosuggestions"
 
-  - name: "Install zsh-syntax-highlighting"
-    git:
-      repo: https://github.com/zsh-users/zsh-syntax-highlighting
-      dest: "{{ ansible_env.HOME }}/.zsh/zsh-syntax-highlighting" 
+    - name: "Install zsh-syntax-highlighting"
+      git:
+        repo: https://github.com/zsh-users/zsh-syntax-highlighting
+        dest: "{{ ansible_env.HOME }}/.zsh/zsh-syntax-highlighting"
 
-  - name: "Config zshrc"
-    shell: |
-      echo "source $HOME/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh" >> $HOME/.zshrc
-      echo "source $HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" >> $HOME/.zshrc
-      echo "eval \"$(starship init zsh)\"" >> $HOME/.zshrc
-      echo "export PATH=\"$PATH:$HOME/.tools/homebrew/bin\"" >> $HOME/.zshrc 
-      source $HOME/.zshrc
-    args:
-      executable: /bin/bash
+    - name: "Set zsh-autosuggestions"
+      lineinfile:
+        dest: $HOME/.zshrc
+        line: "source $HOME/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh"
+
+    - name: "Set zsh-syntax-highlighting"
+      lineinfile:
+        dest: $HOME/.zshrc
+        line: "source $HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+
+    - name: "Set homebrew PATH"
+      lineinfile:
+        dest: $HOME/.zshrc
+        line: "eval $($($HOME/.tools/homebrew/bin/brew --prefix)/bin/brew shellenv)"
+
+    - name: "Set starship shell"
+      lineinfile:
+        dest: $HOME/.zshrc
+        line: "eval \"$(starship init zsh)\""
+
+    - name: "Set fzf key-bindings"
+      shell: yes | $(brew --prefix)/opt/fzf/install 
+        
+  # - name: "source zshrc"
+  #   shell: |
+  #     source $HOME/.zshrc
+  #   args:
+  #     executable: /bin/bash
