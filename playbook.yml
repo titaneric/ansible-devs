@@ -1,94 +1,148 @@
 - hosts: all
-  environment:
-    PATH: "{{ ansible_env.PATH }}:{{ ansible_env.HOME }}/.tools/homebrew/bin"
+  vars:
+    local:
+      LOCAL_HOME: "{{ ansible_env.HOME }}/.local"
+    zsh:
+      ZSH_CONFIG: "{{ ansible_env.HOME }}/.zshrc"
+      ZSH_HOME: "{{ ansible_env.HOME }}/.zsh"
+    homebrew:
+      BREW_HOME: "{{ local.LOCAL_HOME }}/homebrew"
+    rust:
+      CARGO_HOME: "{{ local.LOCAL_HOME }}/cargo"
+      RUSTUP_HOME: "{{ local.LOCAL_HOME }}/rustup"
+    go:
+      GO_HOME: "{{ local.LOCAL_HOME }}/go"
+
   tasks:
-    - name: "Create directory for packags"
-      file:
-        path: "{{ ansible_env.HOME }}/.tools/homebrew"
-        recurse: yes
-        state: directory
+    - name: "Install default tools"
+      block:
+        - name: "Create directory for homebrew"
+          file:
+            path: "{{ homebrew.BREW_HOME }}"
+            recurse: yes
+            state: directory
 
-    - name: "Update apt"
-      become: true
-      apt:
-        update_cache: yes
-      register: apt
+        - name: "Update apt"
+          become: true
+          apt:
+            update_cache: yes
+          register: apt
 
-    - name: "Install distribution packages"
-      become: true
-      apt:
-        pkg:
-          - git
-          - curl
-          - wget
-          - vim
-          - tmux
-          - zsh
-          - build-essential
-          - procps
-          - file
+        - name: "Install distribution packages"
+          become: true
+          apt:
+            pkg:
+              - git
+              - curl
+              - wget
+              - vim
+              - tmux
+              - zsh
+              - build-essential
+              - procps
+              - file
 
-    - name: "Install Homebrew"
-      shell: curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C homebrew
-      args:
-        chdir: "{{ ansible_env.HOME }}/.tools"
+        - name: "Install Homebrew"
+          shell: curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C homebrew
+          args:
+            chdir: "{{ local.LOCAL_HOME }}"
 
-      # unarchive:
-      #   src: https://github.com/Homebrew/brew/tarball/master
-      #   dest: /home/{{ ansible_env.USER }}/.tools
-      #   remote_src: yes
-    - name: "Install brew packages"
-      homebrew:
-        path: "{{ ansible_env.HOME }}/.tools/homebrew/bin"
-        name:
-          - fzf
-          - ripgrep
-          - exa
-          - fd
-          - bat
-          - git-delta
-          - starship
-        state: present
+        - name: "Install brew packages"
+          homebrew:
+            path: "{{ homebrew.BREW_HOME }}/bin"
+            name:
+              - fzf
+              - ripgrep
+              - exa
+              - fd
+              - bat
+              - git-delta
+              - starship
+            state: present
 
-    - name: "Set default shell to zsh"
-      become: true
-      shell: chsh -s $(which zsh)
+        - name: "Set default shell to zsh"
+          become: true
+          shell: chsh -s $(which zsh)
 
-    - name: "Install zsh-autosuggestions"
-      git:
-        repo: https://github.com/zsh-users/zsh-autosuggestions
-        dest: "{{ ansible_env.HOME }}/.zsh/zsh-autosuggestions"
+        - name: "Create zshrc"
+          file:
+            path: "{{ zsh.ZSH_CONFIG }}"
+            state: touch
 
-    - name: "Install zsh-syntax-highlighting"
-      git:
-        repo: https://github.com/zsh-users/zsh-syntax-highlighting
-        dest: "{{ ansible_env.HOME }}/.zsh/zsh-syntax-highlighting"
+        - name: "Install zsh-autosuggestions"
+          git:
+            repo: https://github.com/zsh-users/zsh-autosuggestions
+            dest: "{{ zsh.ZSH_HOME }}/zsh-autosuggestions"
 
-    - name: "Set zsh-autosuggestions"
-      lineinfile:
-        dest: $HOME/.zshrc
-        line: "source $HOME/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh"
+        - name: "Install zsh-syntax-highlighting"
+          git:
+            repo: https://github.com/zsh-users/zsh-syntax-highlighting
+            dest: "{{ zsh.ZSH_HOME }}/zsh-syntax-highlighting"
 
-    - name: "Set zsh-syntax-highlighting"
-      lineinfile:
-        dest: $HOME/.zshrc
-        line: "source $HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+        - name: "Set zsh-autosuggestions"
+          lineinfile:
+            dest: "{{ zsh.ZSH_CONFIG }}"
+            line: "source {{ zsh.ZSH_HOME }}/zsh-autosuggestions/zsh-autosuggestions.zsh"
 
-    - name: "Set homebrew PATH"
-      lineinfile:
-        dest: $HOME/.zshrc
-        line: "eval $($($HOME/.tools/homebrew/bin/brew --prefix)/bin/brew shellenv)"
+        - name: "Set zsh-syntax-highlighting"
+          lineinfile:
+            dest: "{{ zsh.ZSH_CONFIG }}"
+            line: "source {{ zsh.ZSH_HOME }}/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
-    - name: "Set starship shell"
-      lineinfile:
-        dest: $HOME/.zshrc
-        line: "eval \"$(starship init zsh)\""
+        - name: "Set homebrew PATH"
+          lineinfile:
+            dest: "{{ zsh.ZSH_CONFIG }}"
+            line: "eval $({{ homebrew.BREW_HOME }}/bin/brew shellenv)"
 
-    - name: "Set fzf key-bindings"
-      shell: yes | $(brew --prefix)/opt/fzf/install 
-        
-  # - name: "source zshrc"
-  #   shell: |
-  #     source $HOME/.zshrc
-  #   args:
-  #     executable: /bin/bash
+        - name: "Set starship shell"
+          lineinfile:
+            dest: "{{ zsh.ZSH_CONFIG }}"
+            line: 'eval "$(starship init zsh)"'
+
+        - name: "Set fzf key-bindings"
+          shell: "yes | {{ homebrew.BREW_HOME }}/opt/fzf/install"
+
+    - name: "Install Rust lang"
+      block:
+        - name: "Install Rust"
+          shell: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          environment: "{{ rust }}"
+
+        - name: "Set CARGO_HOME"
+          lineinfile:
+            dest: "{{ zsh.ZSH_CONFIG }}"
+            line: "export CARGO_HOME={{ rust.CARGO_HOME }}"
+
+        - name: "Set RUSTUP_HOME"
+          lineinfile:
+            dest: "{{ zsh.ZSH_CONFIG }}"
+            line: "export RUSTUP_HOME={{ rust.RUSTUP_HOME }}"
+
+        - name: "Set Rust PATH"
+          lineinfile:
+            dest: "{{ zsh.ZSH_CONFIG }}"
+            line: "export PATH=$PATH:{{ rust.CARGO_HOME }}/bin"
+
+    - name: "Install Go lang"
+      block:
+        - name: "Create directory for go"
+          file:
+            path: "{{ go.GO_HOME }}"
+            recurse: yes
+            state: directory
+
+        - name: "Install Go"
+          shell: curl -L https://golang.org/dl/go1.16.3.linux-amd64.tar.gz | tar xz --strip 1 -C go
+          args:
+            chdir: "{{ local.LOCAL_HOME }}"
+
+        - name: "Set GO_HOME"
+          lineinfile:
+            dest: "{{ zsh.ZSH_CONFIG }}"
+            line: "export GOHOME={{ go.GO_HOME }}/bin"
+
+        - name: "Set Go PATH"
+          lineinfile:
+            dest: "{{ zsh.ZSH_CONFIG }}"
+            line: "export PATH=$PATH:$GOHOME"
+
