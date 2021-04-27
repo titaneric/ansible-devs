@@ -15,6 +15,7 @@
 
   tasks:
     - name: "Install default tools"
+      tags: base
       block:
         - name: "Create directory for homebrew"
           file:
@@ -51,6 +52,7 @@
           homebrew:
             path: "{{ homebrew.BREW_HOME }}/bin"
             name:
+              - jq
               - fzf
               - ripgrep
               - exa
@@ -62,27 +64,17 @@
 
         - name: "Set default shell to zsh"
           become: true
-          shell: chsh -s $(which zsh)
+          shell: chsh -s $(which zsh) $USER
 
-        - name: "Create zshrc"
-          file:
-            path: "{{ zsh.ZSH_CONFIG }}"
-            state: touch
-
-        - name: "Install zsh-autosuggestions"
-          git:
-            repo: https://github.com/zsh-users/zsh-autosuggestions
-            dest: "{{ zsh.ZSH_HOME }}/zsh-autosuggestions"
+        - name: "Download zshrc"
+          get_url:
+            url: https://raw.githubusercontent.com/titaneric/dotfiles/master/.zshrc
+            dest: "{{ zsh.ZSH_CONFIG }}"
 
         - name: "Install zsh-syntax-highlighting"
           git:
             repo: https://github.com/zsh-users/zsh-syntax-highlighting
             dest: "{{ zsh.ZSH_HOME }}/zsh-syntax-highlighting"
-
-        - name: "Set zsh-autosuggestions"
-          lineinfile:
-            dest: "{{ zsh.ZSH_CONFIG }}"
-            line: "source {{ zsh.ZSH_HOME }}/zsh-autosuggestions/zsh-autosuggestions.zsh"
 
         - name: "Set zsh-syntax-highlighting"
           lineinfile:
@@ -103,6 +95,7 @@
           shell: "yes | {{ homebrew.BREW_HOME }}/opt/fzf/install"
 
     - name: "Install Rust lang"
+      tags: rust
       block:
         - name: "Install Rust"
           shell: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -124,6 +117,7 @@
             line: "export PATH=$PATH:{{ rust.CARGO_HOME }}/bin"
 
     - name: "Install Go lang"
+      tags: go
       block:
         - name: "Create directory for go"
           file:
