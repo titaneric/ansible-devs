@@ -2,9 +2,13 @@
   vars:
     local:
       LOCAL_HOME: "{{ ansible_env.HOME }}/.local"
+      TMUX_CONFIG: "{{ ansible_env.HOME }}/.tmux.conf"
     zsh:
       ZSH_CONFIG: "{{ ansible_env.HOME }}/.zshrc"
       ZSH_HOME: "{{ ansible_env.HOME }}/.zsh"
+    starship:
+      STARSHIP_HOME: "{{ ansible_env.HOME }}/.config"
+      STARSHIP_CONFIG: "{{ starship.HOME }}/starship.toml"
     homebrew:
       BREW_HOME: "{{ local.LOCAL_HOME }}/homebrew"
     rust:
@@ -20,6 +24,12 @@
         - name: "Create directory for homebrew"
           file:
             path: "{{ homebrew.BREW_HOME }}"
+            recurse: yes
+            state: directory
+
+        - name: "Create directory for starship"
+          file:
+            path: "{{ misc.STARSHIP_CONFIG }}"
             recurse: yes
             state: directory
 
@@ -71,15 +81,45 @@
             url: https://raw.githubusercontent.com/titaneric/dotfiles/master/.zshrc
             dest: "{{ zsh.ZSH_CONFIG }}"
 
-        - name: "Install zsh-syntax-highlighting"
-          git:
-            repo: https://github.com/zsh-users/zsh-syntax-highlighting
-            dest: "{{ zsh.ZSH_HOME }}/zsh-syntax-highlighting"
+        - name: "Download tmux.conf"
+          get_url:
+            url: https://raw.githubusercontent.com/titaneric/dotfiles/master/.tmux.conf
+            dest: "{{ local.TMUX_CONFIG }}"
 
-        - name: "Set zsh-syntax-highlighting"
+        - name: "Download starship.toml"
+          get_url:
+            url: https://raw.githubusercontent.com/titaneric/dotfiles/master/starship.toml
+            dest: "{{ starship.STARSHIP_CONFIG }}"
+
+        # - name: "Install zsh-syntax-highlighting"
+        #   git:
+        #     repo: https://github.com/zsh-users/zsh-syntax-highlighting
+        #     dest: "{{ zsh.ZSH_HOME }}/zsh-syntax-highlighting"
+
+        # - name: "Set zsh-syntax-highlighting"
+        #   lineinfile:
+        #     dest: "{{ zsh.ZSH_CONFIG }}"
+        #     line: "source {{ zsh.ZSH_HOME }}/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+
+        - name: "Install fast-syntax-highlighting"
+          git:
+            repo: https://github.com/zdharma/fast-syntax-highlighting
+            dest: "{{ zsh.ZSH_HOME }}/fast-syntax-highlighting"
+
+        - name: "Set fast-syntax-highlighting"
           lineinfile:
             dest: "{{ zsh.ZSH_CONFIG }}"
-            line: "source {{ zsh.ZSH_HOME }}/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+            line: "source {{ zsh.ZSH_HOME }}/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh"
+
+        - name: "Install fzf-tab"
+          git:
+            repo: https://github.com/Aloxaf/fzf-tab
+            dest: "{{ zsh.ZSH_HOME }}/fzf-tab"
+
+        - name: "Set fzf-tab"
+          lineinfile:
+            dest: "{{ zsh.ZSH_CONFIG }}"
+            line: "source {{ zsh.ZSH_HOME }}/fzf-tab/fzf-tab.plugin.zsh"
 
         - name: "Set homebrew PATH"
           lineinfile:
