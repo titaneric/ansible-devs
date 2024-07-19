@@ -1,0 +1,10 @@
+shell_source_lines:
+- 'source {{ ZSH_HOME }}/fast-syntax-highlighting/F-Sy-H.plugin.zsh'
+- 'eval $({{ BREW_HOME }}/bin/brew shellenv)'
+- 'eval "$(starship init zsh)"'
+- 'source <(kubectl completion zsh)'
+- 'eval "$(direnv hook zsh)"'
+- 'eval "$(atuin init zsh)"'
+
+aliases:
+- 'alias ls="eza"'

@@ -1,0 +1,6 @@
+distribution_packages:
+- git
+- curl
+- wget
+- vim
+- zsh

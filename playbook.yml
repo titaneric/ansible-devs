@@ -1,182 +1,74 @@
 - hosts: all
-  vars:
-    local:
-      LOCAL_HOME: "{{ ansible_env.HOME }}/.local"
-      TMUX_CONFIG: "{{ ansible_env.HOME }}/.tmux.conf"
-    zsh:
-      ZSH_CONFIG: "{{ ansible_env.HOME }}/.zshrc"
-      ZSH_HOME: "{{ ansible_env.HOME }}/.zsh"
-    starship:
-      STARSHIP_HOME: "{{ ansible_env.HOME }}/.config"
-      STARSHIP_CONFIG: "{{ starship.HOME }}/starship.toml"
-    homebrew:
-      BREW_HOME: "{{ local.LOCAL_HOME }}/homebrew"
-    rust:
-      CARGO_HOME: "{{ local.LOCAL_HOME }}/cargo"
-      RUSTUP_HOME: "{{ local.LOCAL_HOME }}/rustup"
-    go:
-      GO_HOME: "{{ local.LOCAL_HOME }}/go"
-
+  vars_files:
+    - vars/path.yml
+    - vars/shell.yml
+    - vars/distribution_packages.yml
+    - vars/brew_packages.yml
+  environment:
+    NONINTERACTIVE: 1
   tasks:
     - name: "Install default tools"
       tags: base
       block:
-        - name: "Create directory for homebrew"
-          file:
-            path: "{{ homebrew.BREW_HOME }}"
-            recurse: yes
-            state: directory
-
-        - name: "Create directory for starship"
-          file:
-            path: "{{ misc.STARSHIP_CONFIG }}"
-            recurse: yes
-            state: directory
-
-        - name: "Update apt"
-          become: true
-          apt:
-            update_cache: yes
-          register: apt
-
         - name: "Install distribution packages"
           become: true
-          apt:
-            pkg:
-              - git
-              - curl
-              - wget
-              - vim
-              - tmux
-              - zsh
-              - build-essential
-              - procps
-              - file
+          ansible.builtin.package:
+            state: latest
+            name: "{{ distribution_packages }}"
 
-        - name: "Install Homebrew"
-          shell: curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C homebrew
-          args:
-            chdir: "{{ local.LOCAL_HOME }}"
+        - name: Install linuxbrew
+          ansible.builtin.include_role:
+            name: "markosamuli.linuxbrew"
+          vars:
+            linuxbrew_use_installer: true
+            linuxbrew_init_shell: false
+
+        - name: Install nix
+          ansible.builtin.include_role:
+            name: "danielrolls.nix"
 
         - name: "Install brew packages"
-          homebrew:
-            path: "{{ homebrew.BREW_HOME }}/bin"
-            name:
-              - jq
-              - fzf
-              - ripgrep
-              - exa
-              - fd
-              - bat
-              - git-delta
-              - starship
+          community.general.homebrew:
+            name: "{{ brew_packages }}"
             state: present
 
-        - name: "Set default shell to zsh"
-          become: true
-          shell: chsh -s $(which zsh) $USER
+        - name: change user shell to zsh 
+          become: yes
+          user:
+            name: "{{ ansible_user_id  }}"
+            shell: /bin/zsh
 
         - name: "Download zshrc"
           get_url:
             url: https://raw.githubusercontent.com/titaneric/dotfiles/master/.zshrc
-            dest: "{{ zsh.ZSH_CONFIG }}"
-
-        - name: "Download tmux.conf"
-          get_url:
-            url: https://raw.githubusercontent.com/titaneric/dotfiles/master/.tmux.conf
-            dest: "{{ local.TMUX_CONFIG }}"
-
-        - name: "Download starship.toml"
-          get_url:
-            url: https://raw.githubusercontent.com/titaneric/dotfiles/master/starship.toml
-            dest: "{{ starship.STARSHIP_CONFIG }}"
-
-        # - name: "Install zsh-syntax-highlighting"
-        #   git:
-        #     repo: https://github.com/zsh-users/zsh-syntax-highlighting
-        #     dest: "{{ zsh.ZSH_HOME }}/zsh-syntax-highlighting"
-
-        # - name: "Set zsh-syntax-highlighting"
-        #   lineinfile:
-        #     dest: "{{ zsh.ZSH_CONFIG }}"
-        #     line: "source {{ zsh.ZSH_HOME }}/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+            dest: "{{ ZSH_CONFIG }}"
 
         - name: "Install fast-syntax-highlighting"
           git:
             repo: https://github.com/zdharma/fast-syntax-highlighting
-            dest: "{{ zsh.ZSH_HOME }}/fast-syntax-highlighting"
+            dest: "{{ ZSH_HOME }}/fast-syntax-highlighting"
 
-        - name: "Set fast-syntax-highlighting"
+        - name: "Source zsh plugins and tools"
           lineinfile:
-            dest: "{{ zsh.ZSH_CONFIG }}"
-            line: "source {{ zsh.ZSH_HOME }}/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh"
+            dest: "{{ ZSH_CONFIG }}"
+            line: "{{ item }}"
+          with_items: "{{ shell_source_lines }}"
 
-        - name: "Install fzf-tab"
-          git:
-            repo: https://github.com/Aloxaf/fzf-tab
-            dest: "{{ zsh.ZSH_HOME }}/fzf-tab"
-
-        - name: "Set fzf-tab"
+        - name: "Set alias"
           lineinfile:
-            dest: "{{ zsh.ZSH_CONFIG }}"
-            line: "source {{ zsh.ZSH_HOME }}/fzf-tab/fzf-tab.plugin.zsh"
+            dest: "{{ ZSH_CONFIG }}"
+            line: "{{ item }}"
+          with_items: "{{ aliases }}"
 
-        - name: "Set homebrew PATH"
-          lineinfile:
-            dest: "{{ zsh.ZSH_CONFIG }}"
-            line: "eval $({{ homebrew.BREW_HOME }}/bin/brew shellenv)"
+        # - name: "Set PATH"
+        #   lineinfile:
+        #     dest: "{{ ZSH_CONFIG }}"
+        #     line: "{{ item }}"
+        #   with_items:
+        #     - 'export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"'
 
-        - name: "Set starship shell"
-          lineinfile:
-            dest: "{{ zsh.ZSH_CONFIG }}"
-            line: 'eval "$(starship init zsh)"'
-
-        - name: "Set fzf key-bindings"
-          shell: "yes | {{ homebrew.BREW_HOME }}/opt/fzf/install"
-
-    - name: "Install Rust lang"
-      tags: rust
-      block:
-        - name: "Install Rust"
-          shell: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          environment: "{{ rust }}"
-
-        - name: "Set CARGO_HOME"
-          lineinfile:
-            dest: "{{ zsh.ZSH_CONFIG }}"
-            line: "export CARGO_HOME={{ rust.CARGO_HOME }}"
-
-        - name: "Set RUSTUP_HOME"
-          lineinfile:
-            dest: "{{ zsh.ZSH_CONFIG }}"
-            line: "export RUSTUP_HOME={{ rust.RUSTUP_HOME }}"
-
-        - name: "Set Rust PATH"
-          lineinfile:
-            dest: "{{ zsh.ZSH_CONFIG }}"
-            line: "export PATH=$PATH:{{ rust.CARGO_HOME }}/bin"
-
-    - name: "Install Go lang"
-      tags: go
-      block:
-        - name: "Create directory for go"
-          file:
-            path: "{{ go.GO_HOME }}"
-            recurse: yes
-            state: directory
-
-        - name: "Install Go"
-          shell: curl -L https://golang.org/dl/go1.16.3.linux-amd64.tar.gz | tar xz --strip 1 -C go
-          args:
-            chdir: "{{ local.LOCAL_HOME }}"
-
-        - name: "Set GO_HOME"
-          lineinfile:
-            dest: "{{ zsh.ZSH_CONFIG }}"
-            line: "export GOHOME={{ go.GO_HOME }}/bin"
-
-        - name: "Set Go PATH"
-          lineinfile:
-            dest: "{{ zsh.ZSH_CONFIG }}"
-            line: "export PATH=$PATH:$GOHOME"
-
+        # - name: "Install krew plugins"
+        #   command: "{{ homebrew.BREW_HOME }}/bin/kubectl krew install {{ item }}"
+        #   with_items:
+        #     - ctx
+        #     - node-shell

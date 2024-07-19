@@ -1,2 +1,3 @@
-collections:
-- community.general
+roles:
+- markosamuli.linuxbrew
+- danielrolls.nix

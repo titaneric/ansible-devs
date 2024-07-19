@@ -1,0 +1,29 @@
+brew_shell_packages:
+- starship
+- atuin
+- direnv
+- zellij
+
+brew_cli_packages:
+- jq
+- ripgrep
+- eza
+- fd
+- bat
+- git-delta
+- just
+- tokei
+- difftastic
+
+brew_system_packages:
+- podman
+- docker-compose
+- htop
+- terraform
+- kubectl
+- helm
+- kustomize
+- gh
+- typst
+
+brew_packages: "{{ brew_shell_packages + brew_cli_packages + brew_system_packages }}"
