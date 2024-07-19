@@ -1,0 +1,21 @@
+- name: "Install distribution packages"
+  become: true
+  ansible.builtin.package:
+    state: latest
+    name: "{{ distribution_packages }}"
+
+- name: Install linuxbrew
+  ansible.builtin.include_role:
+    name: "markosamuli.linuxbrew"
+  vars:
+    linuxbrew_use_installer: true
+    linuxbrew_init_shell: false
+
+- name: Install nix
+  ansible.builtin.include_role:
+    name: "danielrolls.nix"
+
+- name: "Install brew packages"
+  community.general.homebrew:
+    name: "{{ brew_packages }}"
+    state: present

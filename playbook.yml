@@ -8,67 +8,9 @@
     NONINTERACTIVE: 1
   tasks:
     - name: "Install default tools"
-      tags: base
       block:
-        - name: "Install distribution packages"
-          become: true
-          ansible.builtin.package:
-            state: latest
-            name: "{{ distribution_packages }}"
+        - name: install packages
+          include_tasks: tasks/packages.yml
 
-        - name: Install linuxbrew
-          ansible.builtin.include_role:
-            name: "markosamuli.linuxbrew"
-          vars:
-            linuxbrew_use_installer: true
-            linuxbrew_init_shell: false
-
-        - name: Install nix
-          ansible.builtin.include_role:
-            name: "danielrolls.nix"
-
-        - name: "Install brew packages"
-          community.general.homebrew:
-            name: "{{ brew_packages }}"
-            state: present
-
-        - name: change user shell to zsh 
-          become: yes
-          user:
-            name: "{{ ansible_user_id  }}"
-            shell: /bin/zsh
-
-        - name: "Download zshrc"
-          get_url:
-            url: https://raw.githubusercontent.com/titaneric/dotfiles/master/.zshrc
-            dest: "{{ ZSH_CONFIG }}"
-
-        - name: "Install fast-syntax-highlighting"
-          git:
-            repo: https://github.com/zdharma/fast-syntax-highlighting
-            dest: "{{ ZSH_HOME }}/fast-syntax-highlighting"
-
-        - name: "Source zsh plugins and tools"
-          lineinfile:
-            dest: "{{ ZSH_CONFIG }}"
-            line: "{{ item }}"
-          with_items: "{{ shell_source_lines }}"
-
-        - name: "Set alias"
-          lineinfile:
-            dest: "{{ ZSH_CONFIG }}"
-            line: "{{ item }}"
-          with_items: "{{ aliases }}"
-
-        # - name: "Set PATH"
-        #   lineinfile:
-        #     dest: "{{ ZSH_CONFIG }}"
-        #     line: "{{ item }}"
-        #   with_items:
-        #     - 'export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"'
-
-        # - name: "Install krew plugins"
-        #   command: "{{ homebrew.BREW_HOME }}/bin/kubectl krew install {{ item }}"
-        #   with_items:
-        #     - ctx
-        #     - node-shell
+        - name: set shell
+          include_tasks: tasks/shell.yml

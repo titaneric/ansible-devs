@@ -1,0 +1,40 @@
+- name: change user shell to zsh 
+  become: yes
+  user:
+    name: "{{ ansible_user_id  }}"
+    shell: /bin/zsh
+
+- name: "Download zshrc"
+  get_url:
+    url: https://raw.githubusercontent.com/titaneric/dotfiles/master/.zshrc
+    dest: "{{ ZSH_CONFIG }}"
+
+- name: "Install fast-syntax-highlighting"
+  git:
+    repo: https://github.com/zdharma/fast-syntax-highlighting
+    dest: "{{ ZSH_HOME }}/fast-syntax-highlighting"
+
+- name: "Source zsh plugins and tools"
+  lineinfile:
+    dest: "{{ ZSH_CONFIG }}"
+    line: "{{ item }}"
+  with_items: "{{ shell_source_lines }}"
+
+- name: "Set alias"
+  lineinfile:
+    dest: "{{ ZSH_CONFIG }}"
+    line: "{{ item }}"
+  with_items: "{{ aliases }}"
+
+# - name: "Set PATH"
+#   lineinfile:
+#     dest: "{{ ZSH_CONFIG }}"
+#     line: "{{ item }}"
+#   with_items:
+#     - 'export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"'
+
+# - name: "Install krew plugins"
+#   command: "{{ homebrew.BREW_HOME }}/bin/kubectl krew install {{ item }}"
+#   with_items:
+#     - ctx
+#     - node-shell
