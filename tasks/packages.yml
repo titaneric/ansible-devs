@@ -4,6 +4,38 @@
     state: latest
     name: "{{ distribution_packages }}"
 
+- name: Get current user
+  ansible.builtin.command: whoami
+  register: linuxbrew_whoami
+  changed_when: false
+  become: false
+
+- name: Set Linuxbrew user
+  ansible.builtin.set_fact:
+    linuxbrew_user: "{{ linuxbrew_whoami.stdout }}"
+  when: linuxbrew_user is undefined
+
+- name: Get group for user {{ linuxbrew_user }}
+  ansible.builtin.command: id -g
+  register: linuxbrew_user_group
+  become_user: "{{ linuxbrew_user }}"
+  changed_when: false
+
+- name: Set Linuxbrew group
+  ansible.builtin.set_fact:
+    linuxbrew_group: "{{ linuxbrew_user_group.stdout }}"
+    linuxbrew_prefix_shared: "{{ BREW_HOME }}"
+  when: linuxbrew_group is undefined
+
+- name: Create Linuxbrew directory
+  ansible.builtin.file:
+    path: "{{ linuxbrew_prefix_shared }}"
+    state: directory
+    owner: "{{ linuxbrew_user }}"
+    group: "{{ linuxbrew_group }}"
+    mode: "0755"
+  become: true
+
 - name: Install linuxbrew
   ansible.builtin.include_role:
     name: "markosamuli.linuxbrew"

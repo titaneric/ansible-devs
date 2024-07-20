@@ -3,4 +3,4 @@ all:
     ubuntu:
       ansible_host: 192.168.0.17
       ansible_user: chenyee
-      ansible_ssh_private_key_file: id_rsa
+      # ansible_ssh_private_key_file: id_rsa
