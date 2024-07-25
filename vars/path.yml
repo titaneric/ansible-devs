@@ -1,3 +1,4 @@
 ZSH_CONFIG: "{{ ansible_env.HOME }}/.zshrc"
 ZSH_HOME: "{{ ansible_env.HOME }}/.zsh"
+CARGO_HOME: "{{ ansible_env.HOME }}/.cargo"
 BREW_HOME: "/home/linuxbrew/.linuxbrew"

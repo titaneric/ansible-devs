@@ -26,12 +26,12 @@
     line: "{{ item }}"
   with_items: "{{ aliases }}"
 
-# - name: "Set PATH"
-#   lineinfile:
-#     dest: "{{ ZSH_CONFIG }}"
-#     line: "{{ item }}"
-#   with_items:
-#     - 'export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"'
+- name: "Set PATH"
+  lineinfile:
+    dest: "{{ ZSH_CONFIG }}"
+    line: "{{ item }}"
+  with_items:
+    - 'export PATH="{{ CARGO_HOME }}/bin:$PATH"'
 
 # - name: "Install krew plugins"
 #   command: "{{ homebrew.BREW_HOME }}/bin/kubectl krew install {{ item }}"
