@@ -4,6 +4,7 @@
     - vars/shell.yml
     - vars/distribution_packages.yml
     - vars/brew_packages.yml
+    - vars/post_install.yml
   environment:
     NONINTERACTIVE: 1
   tasks:

@@ -2,4 +2,16 @@
   community.crypto.openssh_keypair:
     path: "{{ ansible_env.HOME }}/.ssh/github"
     type: ed25519
-    comment: "chenyihuang001@gmail.com"
+    comment: "{{ git_email }}"
+
+- name: Set git config
+  git_config:
+    scope: global
+    name: user.email
+    value: "{{ git_email }}"
+
+- name: Set git config
+  git_config:
+    scope: global
+    name: user.name
+    value: "{{ git_name }}"
