@@ -1,3 +1,4 @@
 roles:
 - markosamuli.linuxbrew
 - danielrolls.nix
+- alvistack.podman

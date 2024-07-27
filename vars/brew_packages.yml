@@ -16,7 +16,6 @@ brew_cli_packages:
 - difftastic
 
 brew_system_packages:
-- podman
 - docker-compose
 - htop
 - terraform
