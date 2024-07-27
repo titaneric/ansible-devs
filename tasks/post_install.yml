@@ -1,0 +1,5 @@
+- name: Generate an OpenSSH keypair with the default values (4096 bits, rsa)
+  community.crypto.openssh_keypair:
+    path: "{{ ansible_env.HOME }}/.ssh/github"
+    type: ed25519
+    comment: "chenyihuang001@gmail.com"

@@ -33,6 +33,7 @@
   with_items:
     - 'export PATH="{{ CARGO_HOME }}/bin:$PATH"'
     - 'export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"'
+    - 'export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/github"'
 
 - name: "Install krew plugins"
   ansible.builtin.shell: "source {{ ZSH_CONFIG }} && {{ BREW_HOME }}/bin/kubectl krew install {{ item }}"

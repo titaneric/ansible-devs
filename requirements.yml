@@ -1,3 +1,6 @@
 roles:
 - markosamuli.linuxbrew
 - danielrolls.nix
+
+collections:
+- community.crypto
