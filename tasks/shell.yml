@@ -32,15 +32,18 @@
     line: "{{ item }}"
   with_items:
     - 'export PATH="{{ CARGO_HOME }}/bin:$PATH"'
-
-# - name: "Install krew plugins"
-#   command: "{{ homebrew.BREW_HOME }}/bin/kubectl krew install {{ item }}"
-#   with_items:
-#     - ctx
-#     - node-shell
+    - 'export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"'
 
 - name: "Set autin config"
   lineinfile:
     path: "{{ ATUIN_CONFIG }}"
     regexp: '^enter_accept '
     line: "enter_accept = false"
+
+- name: "Install krew plugins"
+  ansible.builtin.shell: "source {{ ZSH_CONFIG }} && {{ BREW_HOME }}/bin/kubectl krew install {{ item }}"
+  args:
+    executable: /bin/zsh
+  with_items:
+    - ctx
+    - node-shell

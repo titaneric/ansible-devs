@@ -16,10 +16,10 @@ brew_cli_packages:
 - difftastic
 
 brew_system_packages:
-- docker-compose
 - htop
 - terraform
 - kubectl
+- krew
 - helm
 - kustomize
 - gh
