@@ -14,6 +14,7 @@ brew_cli_packages:
 - just
 - tokei
 - difftastic
+- fzf
 
 brew_system_packages:
 - htop
@@ -24,5 +25,6 @@ brew_system_packages:
 - kustomize
 - gh
 - typst
+- kind
 
 brew_packages: "{{ brew_shell_packages + brew_cli_packages + brew_system_packages }}"

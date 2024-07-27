@@ -51,9 +51,3 @@
   community.general.homebrew:
     name: "{{ brew_packages }}"
     state: present
-
-- name: "Install podman"
-  ansible.builtin.include_role:
-    name: "alvistack.podman"
-    apply:
-      become: true
