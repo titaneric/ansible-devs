@@ -38,3 +38,9 @@
 #   with_items:
 #     - ctx
 #     - node-shell
+
+- name: "Set autin config"
+  lineinfile:
+    path: "{{ ATUIN_CONFIG }}"
+    regexp: '^enter_accept '
+    line: "enter_accept = false"
